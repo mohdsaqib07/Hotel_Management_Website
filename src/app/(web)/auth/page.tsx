@@ -38,7 +38,7 @@ const Auth = () => {
   const loginHandler = async () => {
     try {
       await signIn();
-      toast.success("Sign In Successfully !");
+      
       router.push("/");
 
       //  is successfully signIn push the user to the home page
