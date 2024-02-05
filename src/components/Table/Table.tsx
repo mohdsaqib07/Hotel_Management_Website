@@ -61,7 +61,7 @@ const Table: FC<Props> = ({ bookingDetails, setRoomId, toggleRatingModal }) => {
           ) : (
             <tr className="bg-[#f5f5f5] border-b hover:bg-gray-100">
               <th
-                onClick={() => router.push(`/rooms/delux-suite`)}
+                onClick={() => router.push(`/rooms/deluxe-suite`)}
                 className="px-6 underline text-blue-600 cursor-pointer py-4 font-medium whitespace-nowrap"
               >
                 Deluxe Suite
