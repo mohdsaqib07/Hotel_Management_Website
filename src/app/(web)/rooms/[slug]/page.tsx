@@ -1,0 +1,200 @@
+"use client";
+import useSWR from "swr";
+
+import { MdOutlineCleaningServices } from "react-icons/md";
+import { LiaFireExtinguisherSolid } from "react-icons/lia";
+import { AiOutlineMedicineBox } from "react-icons/ai";
+import { GiSmokeBomb } from "react-icons/gi";
+import { useState } from "react";
+import { getRoom } from "@/lib/apis";
+import LoadingSpinner from "../../loading";
+import HotelPhotoGallery from "@/components/HotelPhotoGallery/HotelPhotoGallery";
+import BookRoomCta from "@/components/BookRoomCta/BookRoomCta";
+import RoomReview from "@/components/RoomReview/RoomReview";
+import toast from "react-hot-toast";
+import axios from "axios";
+import { getStripe } from "@/lib/stripe";
+const RoomDetails = ({ params }: { params: { slug: string } }) => {
+  const { slug } = params;
+  const [checkinDate, setCheckinDate] = useState<Date | null>(null);
+  const [checkoutDate, setCheckoutDate] = useState<Date | null>(null);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const fetchRoom = async () => getRoom(slug);
+  const [loading, setLoading] = useState(false);
+  // this is the syntax to rename the property after destructuring the propery
+  const { data: room, error, isLoading } = useSWR("api/room", fetchRoom);
+
+  if (error) throw new Error("Cannot fetch Data");
+  if (typeof room === "undefined" && !isLoading)
+    throw new Error("Cannot fetch data");
+
+  if (!room) return <LoadingSpinner />;
+
+  const calcMinCheckoutDate = () => {
+    if (checkinDate) {
+      const nextDay = new Date(checkinDate);
+      nextDay.setDate(nextDay.getDate() + 1);
+      return nextDay;
+    }
+    return null;
+  };
+  const calcNumberOfDays = () => {
+    if (!checkinDate || !checkoutDate) return 0;
+    const timeDifference = checkoutDate.getTime() - checkinDate.getTime();
+    const noOfDays = Math.ceil(timeDifference / (24 * 60 * 60 * 1000));
+    return noOfDays;
+  };
+  const handleBookNow = async () => {
+    if (!checkinDate || !checkoutDate)
+      return toast.error(
+        "Please Provide chekin and chekout date to move further!"
+      );
+    if (checkinDate > checkoutDate)
+      return toast.error("Please choose a valid chekin date!");
+    setLoading(true);
+
+    const numberOfDays = calcNumberOfDays();
+    const hotelRoomSlug = room.slug.current;
+    // Integrate Stripe
+    const stripe = await getStripe();
+
+    try {
+      const { data: stripeSession } = await axios.post(`/api/stripe`, {
+        checkinDate,
+        checkoutDate,
+        adults,
+        children,
+        numberOfDays,
+        hotelRoomSlug,
+      });
+      if (stripe) {
+        setLoading(false);
+        const result = await stripe.redirectToCheckout({
+          sessionId: stripeSession.id,
+        });
+
+        if (result.error) {
+          toast.error("Payement Failed");
+        }
+      }
+    } catch (error: any) {
+      console.log("Error : ", error.message);
+      toast.error("An Error Occured during Payement");
+    }
+  };
+
+  return (
+    <div>
+      <HotelPhotoGallery photos={room.images} />
+      <div className="container mx-auto mt-20">
+        <div className="md:grid md:grid-cols-12 gap-10 px-3 ">
+          <div className="md:col-span-8 md:w-full">
+            {/* Hotel Information*/}
+            <div>
+              <h2 className="font-bold text-left text-lg md:text-2xl">
+                {room.name} ({room.dimension})
+              </h2>
+              <div className="flex my-11">
+                {room.offeredAmenities.map((amenity) => (
+                  <div
+                    key={amenity._key}
+                    className="md:w-44 w-fit text-center px-2 md:px-0 h-20 md:h-40 mr-3 bg-[#eff0f2] dark:bg-light rounded-lg grid place-content-center"
+                  >
+                    <i
+                      className={`fa-solid ${amenity.icon} md:text-2xl hover:scale-125 transition-all duration-300`}
+                    ></i>
+                    <p className="text-xs md:text-base pt-3">
+                      {amenity.amenity}
+                    </p>
+                  </div>
+                ))}
+              </div>
+              <div className="mb-11">
+                <h2 className="font-bold text-3xl mb-2">Description</h2>
+                <p className="leading-relaxed font-extralight p-2 sm:p-0">
+                  {room.description}
+                </p>
+              </div>
+              <div className="mb-11">
+                <h2 className="font-bold text-3xl mb-2">Offered Amenities</h2>
+                <div className="grid grid-cols-2 gap-y-1 md:gap-y-2">
+                  {room.offeredAmenities.map((amenity) => (
+                    <div
+                      key={amenity._key}
+                      className="flex items-center gap-2  md:my-0 my-1"
+                    >
+                      <i
+                        className={`fa-solid ${amenity.icon} text-xl md:text-2xl hover:scale-125 transition-all duration-300`}
+                      ></i>
+                      <p className="text-xs md:text-base ml-2">
+                        {amenity.amenity}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="mb-11">
+                <h2 className="font-bold text-3xl mb-2">Safety and Hygiene</h2>
+                <div className="grid grid-cols-2 gap-y-1 md:gap-y-2">
+                  <div className="flex items-center my-1 md:my-0">
+                    <MdOutlineCleaningServices className="text-xl md:text-2xl hover:scale-125 transition-all duration-300" />
+                    <p className="ml-2 text-base text-xs">Daily Cleaning</p>
+                  </div>
+                  <div className="flex items-center my-1 md:my-0">
+                    <LiaFireExtinguisherSolid className="text-xl md:text-2xl hover:scale-125 transition-all duration-300" />
+                    <p className="ml-2 text-base text-xs">Fire Extinguishers</p>
+                  </div>
+                  <div className="flex items-center my-1 md:my-0">
+                    <AiOutlineMedicineBox className="text-xl md:text-2xl hover:scale-125 transition-all duration-300" />
+                    <p className="ml-2 text-base text-xs">
+                      Disinfections and Sterialization
+                    </p>
+                  </div>
+                  <div className="flex items-center my-1 md:my-0">
+                    <GiSmokeBomb className="text-xl md:text-2xl hover:scale-125 transition-all duration-300" />
+                    <p className="ml-2 text-base text-xs">Smoke Detectors</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="shadow dark:shadow-[#f5f5f5] rounded-lg p-6">
+                <div className="items-center mb-4">
+                  <p className="md:text-lg font-semibold">Customer Reviews</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/*Reviews*/}
+                  <RoomReview roomId={room._id} />
+                </div>
+              </div>
+            </div>
+          </div>
+          <div className="md:col-span-4 mt-3.5 sm:mt-0 rounded-xl shadow-lg dark:shadow dark:shadow-[#f5f5f5] sticky top-10 h-fit">
+            {/*Book Room CTA*/}
+            <BookRoomCta
+              price={room.price}
+              discount={room.discount}
+              specialNote={room.specialNotes}
+              checkinDate={checkinDate}
+              setCheckinDate={setCheckinDate}
+              checkoutDate={checkoutDate}
+              setCheckoutDate={setCheckoutDate}
+              calcMinCheckoutDate={calcMinCheckoutDate}
+              adults={adults}
+              setAdults={setAdults}
+              children={children}
+              setChildren={setChildren}
+              isBooked={room.isBooked}
+              handleBookNow={handleBookNow}
+              calcNumberOfDays={calcNumberOfDays}
+              loading={loading}
+              setLoading={setLoading}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default RoomDetails;
