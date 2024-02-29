@@ -4,6 +4,7 @@ import "./globals.css";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
 import NextAuthProvider from "@/components/AuthProvider/AuthProvider";
+import {NavigationEvents} from "@/components/NavigationEvents/NavigationEvents";
 import Toast from "@/components/Toast/Toast";
 import Script from "next/script";
 import ThemeContextProvider from "@/components/ThemeProvider/ThemeProvider";
@@ -41,6 +42,7 @@ export default function RootLayout({
       <body className={poppins.className}>
         <NextAuthProvider>
           <ThemeContextProvider>
+            <NavigationEvents />
             <Toast />
             <main className="font-normal">
               <Header />
