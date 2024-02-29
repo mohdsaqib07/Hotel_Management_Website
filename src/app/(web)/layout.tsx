@@ -1,3 +1,4 @@
+import {Suspense} from 'react'
 import type { Metadata } from "next";
 import { Poppins } from "next/font/google";
 import "./globals.css";
@@ -42,7 +43,9 @@ export default function RootLayout({
       <body className={poppins.className}>
         <NextAuthProvider>
           <ThemeContextProvider>
+            <Suspense fallback={null}>
             <NavigationEvents />
+            </Suspense>
             <Toast />
             <main className="font-normal">
               <Header />

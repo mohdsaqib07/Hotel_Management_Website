@@ -8,13 +8,19 @@ export function NavigationEvents() {
   const pathname = usePathname()
   const searchParams = useSearchParams()
   const {darkTheme} = useContext(ThemeContext)
+
+  const color = darkTheme ? '#e3e3e3' : '#026057'
  
   useEffect(() => {
-     setProgress(100)
+     setProgress((prevProgress)=>prevProgress + 40)
+     setTimeout(()=>{
+      setProgress(100);
+     },500)
+  
     // You can now use the current URL
     // ...
   }, [pathname, searchParams])
  
-  return <LoadingBar progress={progress} onLoaderFinished={()=>setProgress(0)} />
+  return <LoadingBar progress={progress} waitingTime={200} height={4} color={color} onLoaderFinished={()=>setProgress(0)} />
 
 }
