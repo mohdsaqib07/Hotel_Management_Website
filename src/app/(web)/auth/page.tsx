@@ -37,7 +37,7 @@ const Auth = () => {
   // this handler handle the userlogin
   const loginHandler = async () => {
     try {
-      await signIn();
+      await signIn('github');
       
       router.push("/");
 
