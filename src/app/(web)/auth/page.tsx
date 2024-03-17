@@ -35,9 +35,12 @@ const Auth = () => {
   const router = useRouter();
 
   // this handler handle the userlogin
-  const loginHandler = async () => {
+  const loginHandler = async (provider?: string|null) => {
     try {
-      await signIn('github');
+      if(provider)
+      await signIn(provider);
+      else
+      await signIn();
       
       router.push("/");
 
@@ -84,12 +87,12 @@ const Auth = () => {
           <span className="inline-flex items-center">
             <AiFillGithub
               className="cursor-pointer mr-3 text-4xl text-black dark:text-[#f5f5f5]"
-              onClick={loginHandler}
+              onClick={()=>loginHandler('github')}
             />
             |
             <FcGoogle
               className="cursor-pointer ml-3 text-4xl"
-              onClick={loginHandler}
+              onClick={()=>loginHandler('google')}
             />
           </span>
         </div>
@@ -185,7 +188,7 @@ const Auth = () => {
           </button>
           <button
             className="text-tertiary-dark dark:text-sky-700 underline"
-            onClick={loginHandler}
+            onClick={()=>loginHandler(null)}
             type="button"
           >
             Login
